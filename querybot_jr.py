@@ -5,31 +5,9 @@ import re
 import pyodbc as dbc
 import pandas as pd
 
-sql_conn = dbc.connect("""
-    Driver={SQL Server Native Client 11.0}; 
-    Server=(LocalDb)\LocalDB; 
-    Database=RvnSentences; 
-    Trusted_Connection=yes;
-    """)
-# connection string for SentenceCodes table
-sentences_query = """
-SELECT [LANGUAGE]
-      ,[Match_ID]
-  FROM [RvnSentences].[dbo].[SentenceCodes]
-  """
-
-# connection string for RvnGroups table
-codes_query = """
-SELECT [RVN]
-      ,[Match Code]
-  FROM [RvnSentences].[dbo].[RvnGroups]
-"""
-
-sentences_codes = pd.read_sql(sentences_query, sql_conn)
-rvn_groups = pd.read_sql(codes_query, sql_conn)
 # Load data
-# sentences_codes = pd.read_csv('sentence_codes.csv')
-# rvn_groups = pd.read_csv('rvn_groups.csv')
+sentences_codes = pd.read_csv('sentence_codes.csv')
+rvn_groups = pd.read_csv('rvn_groups.csv')
 
 # Define function to find RVN matches
 def find_rvn(user_input):
