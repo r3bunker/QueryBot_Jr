@@ -17,11 +17,23 @@ def find_rvn(user_input):
 
     clean_text = user_input.replace('\u201D', '"').replace('\u201C', '"')
     clean_text = re.sub('\s+', ' ', clean_text.strip())
-    sentences = re.findall(r'[^:.\s][^:.]*[:.?!]', clean_text)
-    
-    # Add the last sentence, if any (it won't end with period or colon)
-    # if not re.match(r'^.*[:.?!]\s*$', user_input):
-    #     sentences.append(user_input.rsplit(' ', 1)[-1])
+    # sentences = re.findall(r'[^:.\s][^:.]*[:.?!]', clean_text)
+    sentences = []
+    buffer = ""
+    for i, c in enumerate(clean_text):
+        if c == "." and i < len(clean_text) - 1 and clean_text[i+1] != " ":
+            buffer += c
+        elif c in [".", ":" ] and i > 2 and clean_text[i-3:i] != "i.e":
+            buffer += c
+            sentences.append(buffer.strip())
+            buffer = ""
+        else:
+            buffer += c
+
+    if buffer:
+        sentences.append(buffer.strip())
+
+    # print(sentences)
     num_splits = len(sentences)
     percent_matches = 0
     for i in range(sentence_codes.shape[0]):
@@ -54,7 +66,10 @@ def app():
   
   with st.sidebar:
     st.title('FAQs & Instructions')
-    st.write('Enter in contract language into text box.')
+    st.subheader('How does it work?')
+    st.write("""Copy and paste clean_texts or sentences from the pdf into the text box.
+    - Make sure to fix any spelling errors that made have occured from copying pdf text.
+    - """)
   st.title("Find Potential RVN Matches")
   st.caption("<=**IMPORTANT**: FAQ in sidepanel")
   user_input = st.text_area("Enter Text:",height=300)
@@ -75,6 +90,8 @@ def app():
       else:
           st.subheader(f"No Match...Percent Match: {int((percent_matches/num_splits)*100)}% | Matched: {percent_matches}/{num_splits} sentences")
           no_match_string = ' \n'.join(sentences)
+          st.write(matched_sentences)
+
           st.text_area("Sentence(s) with no match:", no_match_string,height=150)
           st.write("**Why did these sentences not find a match?\n")
           st.markdown("1. They are not an RVN sentence.\n2. If you think they are, check to see if there are any spelling errors in the contract pdf.\n3. They are unique and require a new regular expression (send to Kylee).")
