@@ -13,12 +13,10 @@ rvn_groups = pd.read_csv('rvn_groups.csv')
 def find_rvn(user_input):
     match_code = []
     matched_sentences = []
-    # split user input into list of RVN sentence_codes
-    
-    # user_input = user_input.splitlines()
-    # user_input = [line.strip() for line in user_input if line.strip()]
-    clean_text = re.sub('\s+', ' ', user_input.strip())
+    # split user input into list of sentences
 
+    clean_text = user_input.replace('\u201D', '"').replace('\u201C', '"')
+    clean_text = re.sub('\s+', ' ', clean_text.strip())
     sentences = re.findall(r'[^:.\s][^:.]*[:.?!]', clean_text)
     
     # Add the last sentence, if any (it won't end with period or colon)
@@ -32,15 +30,12 @@ def find_rvn(user_input):
         for sentence in sentences:
             try:
                 rvn_wording = sentence.lower()
-                # rvn_wording = f'^{rvn_wording}$'
                 if re.match(regex, rvn_wording):
                     match_code.append(sentence_codes.loc[i, 'Match_ID'])
                     sentences.remove(sentence)
                     matched_sentences.append(sentence)
                     percent_matches += 1
             except:
-                # print(e)
-                # print(sentence)
                 continue
     # sort match_code
     match_code = sorted(set(match_code))
@@ -53,7 +48,10 @@ def find_rvn(user_input):
 
 # Define app
 def app():
-  st.set_page_config(layout="wide")
+  st.set_page_config(
+      layout="wide",
+      initial_sidebar_state='expanded')
+  
   with st.sidebar:
     st.title('FAQs & Instructions')
     st.write('Enter in contract language into text box.')
@@ -66,11 +64,14 @@ def app():
           st.subheader(f"RVN match: {match}")
           st.write(matched_sentences)
           # no_match_string = ' \n'.join(sentences)
-          # st.text_area("Sentence(s) with no match:", no_match_string,height=150)
-          # st.write("**Why did these sentences not find a match?\n")
-          # st.markdown("1. They are not an RVN sentence.\n2. If you think they are, check to see if there are any spelling errors in the contract pdf.\n")
+          if percent_matches != num_splits:
+            st.subheader("Sentence(s) with no match:")
+            st.write(sentences)
+            st.write("**Why did these sentences not find a match?\n")
+            st.markdown("1. They are not an RVN sentence.\n2. If you think they are, check to see if there are any spelling errors in the contract pdf.\n3. They are unique and require a new regular expression (send to Kylee).")
       elif percent_matches == num_splits:
           st.subheader(f"No match. Need a new RVN for: {match_code}")
+          st.subheader('Contact Kylee for confirmation.')
       else:
           st.subheader(f"No Match...Percent Match: {int((percent_matches/num_splits)*100)}% | Matched: {percent_matches}/{num_splits} sentences")
           no_match_string = ' \n'.join(sentences)
