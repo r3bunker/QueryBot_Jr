@@ -17,23 +17,19 @@ def find_rvn(user_input):
 
     clean_text = user_input.replace('\u201D', '"').replace('\u201C', '"')
     clean_text = re.sub('\s+', ' ', clean_text.strip())
-    # sentences = re.findall(r'[^:.\s][^:.]*[:.?!]', clean_text)
-    sentences = []
-    buffer = ""
-    for i, c in enumerate(clean_text):
-        if c == "." and i < len(clean_text) - 1 and clean_text[i+1] != " ":
-            buffer += c
-        elif c in [".", ":" ] and i > 2 and clean_text[i-3:i] != "i.e":
-            buffer += c
-            sentences.append(buffer.strip())
-            buffer = ""
-        else:
-            buffer += c
-
-    if buffer:
-        sentences.append(buffer.strip())
-
-    # print(sentences)
+    
+    # Split sentences by '.' or ':' and allow exceptions
+    def sentence_splitter(text):
+        exceptions = ['(i.e.)', '(Mr.)']
+        pattern = "(?<=[.?!:])\s+"
+        for ex in exceptions:
+            ex = ex.replace('.','\.')
+            pattern = f'(?<!{ex})' + pattern
+        sentences = filter(None, re.split(pattern, clean_text))
+        sentences = list(sentences)
+        return sentences
+    
+    sentences = sentence_splitter(clean_text)
     num_splits = len(sentences)
     percent_matches = 0
     for i in range(sentence_codes.shape[0]):
