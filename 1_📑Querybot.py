@@ -20,7 +20,7 @@ def find_rvn(user_input):
     
     # Split sentences by '.' or ':' and allow exceptions
     def sentence_splitter(text):
-        exceptions = ['(i.e.)', '(Mr.)']
+        exceptions = ['i.e.', 'Mr.', 'L.D.S.', 'U.S.A.']
         pattern = "(?<=[.?!:])\s+"
         for ex in exceptions:
             ex = ex.replace('.','\.')
