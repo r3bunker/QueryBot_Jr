@@ -26,6 +26,7 @@ def sentence_splitter(user_input):
 def find_rvn(user_input):
     match_code = []
     matched_sentences = []
+    match_ID = None
     # Clean and split the user_input
     sentences = sentence_splitter(user_input)
     num_splits = len(sentences)
@@ -107,7 +108,6 @@ def app():
             if match:
                 st.subheader(f"RVN match: {match}")
                 st.write(matched_sentences)
-                # no_match_string = ' \n'.join(sentences)
                 if percent_matches != num_splits:
                     st.subheader("Sentence(s) with no match:")
                     st.write(sentences)
@@ -118,10 +118,9 @@ def app():
                 st.subheader('Contact Kylee for confirmation.')
             else:
                 st.subheader(f"No Match...Percent Match: {int((percent_matches/num_splits)*100)}% | Matched: {percent_matches}/{num_splits} sentences")
-                no_match_string = ' \n'.join(sentences)
                 st.write(matched_sentences)
-
-                st.text_area("Sentence(s) with no match:", no_match_string,height=150)
+                st.subheader("Sentence(s) with no match:")
+                st.write(sentences)
                 st.write("**Why did these sentences not find a match?\n")
                 st.markdown("1. They are not an RVN sentence.\n2. If you think they are, check to see if there are any spelling errors in the contract pdf.\n3. They are unique and require a new regular expression (send to Kylee).")
 
@@ -147,18 +146,20 @@ def app():
         user_input = st.text_input('Enter Sentence:')
         if st.button("Find Matches"):
             match, match_ID, match_code, num_splits, percent_matches, sentences, matched_sentences = find_rvn(user_input)
-            rvn_matches = rvn_groups[rvn_groups['Match Code'].str.contains(match_ID)]['RVN']
-            
-            # CSS to inject contained in a string
-            hide_table_row_index = """
-                        <style>
-                        thead tr th:first-child {display:none}
-                        tbody th {display:none}
-                        </style>
-                        """
-            # Inject CSS with Markdown
-            st.markdown(hide_table_row_index, unsafe_allow_html=True)
-            st.table(rvn_matches)
+            if match_ID:
+                rvn_matches = rvn_groups[rvn_groups['Match Code'].str.contains(match_ID)]['RVN']
+                # CSS to inject contained in a string
+                hide_table_row_index = """
+                            <style>
+                            thead tr th:first-child {display:none}
+                            tbody th {display:none}
+                            </style>
+                            """
+                # Inject CSS with Markdown
+                st.markdown(hide_table_row_index, unsafe_allow_html=True)
+                st.table(rvn_matches)
+            else:
+                st.subheader('No match. Make sure there are no spelling errors.')
 
 
 
