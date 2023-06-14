@@ -1,6 +1,12 @@
 import streamlit as st
 import pandas as pd
+from streamlit_option_menu import option_menu
 
+
+
+st.set_page_config(
+    layout="wide",
+    initial_sidebar_state='collapsed')
 
 sentence_codes = pd.read_csv('sentence_codes.csv')
 rvn_groups = pd.read_csv('rvn_groups.csv')
@@ -19,9 +25,17 @@ with st.sidebar:
     3) 'made available' and 'public' and 'stored'""")
     st.divider()
     st.subheader('FAQs')
-num_strings = st.radio(
-    "How many separate string searches?",
-    ('1', '2', '3'))
+# num_strings = st.radio(
+#     "How many separate string searches?",
+#     ('1', '2', '3'))
+num_strings = option_menu(
+            menu_title=None,  # required
+            options=["1", "2", "3"],  # required
+            icons=["1-circle-fill", "2-circle-fill", "3-circle-fill"],  # optional
+            menu_icon="cast",  # optional
+            default_index=0,  # optional
+            orientation="horizontal",
+        )
 if num_strings == '1':
   user_input = st.text_input("Enter string:")
   if st.button("Find Matches"):
@@ -41,6 +55,7 @@ if num_strings == '1':
       st.markdown(hide_table_row_index, unsafe_allow_html=True)
       st.write(f'Number of results: {len(result_df)}')
       st.table(result_df)
+      
 
 elif num_strings == '2':
   user_input = st.text_input("Enter string:")

@@ -7,59 +7,24 @@ import pandas as pd
 import pyarrow as pa
 import pyarrow.parquet as pq
 from cryptography.fernet import Fernet
+from st_aggrid import GridOptionsBuilder, AgGrid, GridUpdateMode, ColumnsAutoSizeMode
+from streamlit_option_menu import option_menu
+
 import warnings
 warnings.simplefilter(action='ignore', category=FutureWarning)
 warnings.simplefilter(action='ignore', category=UserWarning)
 pd.options.mode.chained_assignment = None
 import io
-import zipfile
-import shutil
-import os
 import psutil
 
 st.set_page_config(
     layout="wide",
-    initial_sidebar_state='expanded')
+    initial_sidebar_state='collapsed')
 
 
 process = psutil.Process()
 memory_usage = process.memory_info().rss / 1024 / 1024  # in MB
 print(f"Memory usage: {memory_usage:.2f} MB")
-
-# @st.cache_resource
-# def combine_csv_files(base_filename, num_chunks):
-#     # Initialize empty dataframe
-#     combined_df = pd.DataFrame()
-
-#     # Read each chunk and append to combined dataframe
-#     for i in range(num_chunks):
-#         chunk_filename = f"{base_filename}_{i}.csv"
-#         chunk_df = pd.read_csv(chunk_filename)
-#         combined_df = combined_df.append(chunk_df, ignore_index=True)
-
-#     # Write combined dataframe to CSV file
-#     combined_filename = f"{base_filename}_combined.csv"
-#     combined_df.to_csv(combined_filename, index=False)
-#     memory_usage = process.memory_info().rss / 1024 / 1024  # in MB
-
-#     print(f"Memory usage: {memory_usage:.2f} MB")
-#     return combined_filename
-
-
-
-# @st.cache_resource
-# def assemble_file(filename):
-#     with open(filename, 'wb') as output_file:
-#         part_num = 1
-#         while True:
-#             part_filename = f"{filename}.part{part_num}"
-#             if not os.path.exists(part_filename):
-#                 break
-#             with open(part_filename, 'rb') as input_file:
-#                 shutil.copyfileobj(input_file, output_file)
-#             part_num += 1
-
-# assemble_file('encrypted_applied_option_related.zip')
 
 
 @st.cache_resource
@@ -68,39 +33,18 @@ def load_csv(filename):
         # If filename is a string, read the CSV file
         memory_usage = process.memory_info().rss / 1024 / 1024  # in MB
 
-        print(f"Memory usage: {memory_usage:.2f} MB")
+        print(f"Memory usage: {filename} | {memory_usage:.2f} MB")
         return pd.read_csv(filename)
     elif isinstance(filename, io.StringIO):
         # If filename is a string or bytes buffer, read the CSV data from the buffer
         memory_usage = process.memory_info().rss / 1024 / 1024  # in MB
 
-        print(f"Memory usage: {memory_usage:.2f} MB")
+        print(f"Memory usage: {filename} | {memory_usage:.2f} MB")
         return pd.read_csv(filename)
     else:
         # If filename is not a string or buffer, raise an error
         raise ValueError("Invalid input type. Expected string or buffer.")
-    
-# @st.cache_resource
-# def decrypt_csv(filename):
-#     # Read encrypted file as bytes
-#     with open(filename, 'rb') as f:
-#         encrypted_bytes = f.read()
 
-#     # Read key from file
-#     with open('mykey.key', 'rb') as f:
-#         key = f.read()
-
-#     # Initialize Fernet object with key
-#     f = Fernet(key)
-
-#     # Decrypt bytes
-#     decrypted_bytes = f.decrypt(encrypted_bytes)
-
-#     # Decode decrypted bytes and create pandas dataframe
-#     decrypted_df = pd.read_csv(io.StringIO(decrypted_bytes.decode()))
-#     memory_usage = process.memory_info().rss / 1024 / 1024  # in MB
-#     print(f"Memory usage: {memory_usage:.2f} MB")
-#     return decrypted_df
 @st.cache_resource
 def decrypt_csv():
     # Read the encryption key from a file
@@ -125,58 +69,20 @@ def decrypt_csv():
     # Convert the table to a pandas DataFrame
     df = table.to_pandas()
     memory_usage = process.memory_info().rss / 1024 / 1024  # in MB
-    print(f"Memory usage: {memory_usage:.2f} MB")
+    print(f"Memory usage: decrypting {memory_usage:.2f} MB")
     return df
-# # THIS FUNCTION WORKS
-# def load_decrypted_csv():
-#     key = st.secrets["querybot_jr"]["encryption_key"]
-#     f = Fernet(key)
-#     with open('encrypted_applied_option_related.csv', 'rb') as encrypted_applied_option_related:
-#         encrypted = encrypted_applied_option_related.read()
-
-#     decrypted = f.decrypt(encrypted)
-
-#     with open('decrypted_applied_option_related.csv', 'wb') as decrypted_applied_option_related:
-#         decrypted_applied_option_related.write(decrypted)
-#     decoded_data = decrypted.decode('utf-8')
-#     string_io = io.StringIO(decoded_data)
-#     memory_usage = process.memory_info().rss / 1024 / 1024  # in MB
-
-#     print(f"Memory usage: {memory_usage:.2f} MB")
-#     return load_csv(string_io)
-
-
-#     # DECRYPT FILE
-#     with zipfile.ZipFile('encrypted_applied_option_related.zip', 'r') as zip_ref:
-#         # Read the encrypted data from the ZIP file
-#         with zip_ref.open('encrypted_applied_option_related.csv', 'r') as encrypted_file:
-#             encrypted = encrypted_file.read()
-
-#         # Decrypt the data
-#         decrypted = f.decrypt(encrypted)
-
-#     # Convert the decrypted data to a Pandas DataFrame
-#     decoded_data = decrypted.decode('utf-8')
-#     string_io = io.StringIO(decoded_data)
-    
-#     return load_csv(string_io)
-
-# f = Fernet(key)
 
 # Load data
 sentence_codes = load_csv('sentence_codes.csv')
 rvn_groups = load_csv('rvn_groups.csv')
-# applied_option_related = decrypt_csv('encrypted_applied_option_related_combined.csv')
-# applied_option_related = combine_csv_files('encrypted_applied_option_related', 4)
-# combined_filename = combine_csv_files('encrypted_applied_option_related', 4)
 applied_option_related = decrypt_csv()
 
 # Split sentences by '.' or ':' and allow exceptions
 def sentence_splitter(user_input):
     clean_text = user_input.replace('\u201D', '"').replace('\u201C', '"')
     clean_text = re.sub('\s+', ' ', clean_text.strip())
-    exceptions = ['i.e.', 'Mr.', 'L.D.S.', 'U.S.A.', 'No.', 'Rev.', 'includes:'] #list of exceptions to avoid incorrect sentence splitting
-    pattern = "(?<=[.?!:])\s+"
+    exceptions = ['i.e.', 'Mr.', 'L.D.S.', 'U.S.A.', 'No.', 'Rev.', 'includes:', 'Dept.'] #list of exceptions to avoid incorrect sentence splitting
+    pattern = "(?<=[.?!])\s+"
     for ex in exceptions:
         ex = ex.replace('.','\.').replace(':','\:')
         pattern = f'(?<!{ex})' + pattern
@@ -248,6 +154,8 @@ def find_matches(pdf_titles, regex_df, contracts_df, rvn_groupings):
                 continue
             opt_wording = row['optWording']
             opt_selected = row['optSelected']
+            if opt_selected == False and opt_wording != wording:
+                wording = wording.replace(f' {opt_wording}', '')
             wordID = row['wordID']
             red_bucket_wording = 'red bucket'
             sixty_day_letter = 'through past cooperative agreements'
@@ -269,7 +177,7 @@ def find_matches(pdf_titles, regex_df, contracts_df, rvn_groupings):
                 match_id = regex_row['Match_ID']
                 
                 # Find all matches of the regex pattern in the wording
-                found_matches = re.findall(pattern, wording.lower())
+                found_matches = re.findall(pattern, wording.lower(), re.IGNORECASE)
                 
                 #OptSelected
                 wordID_table = pdf_contracts[pdf_contracts['wordID'] == wordID]
@@ -335,9 +243,17 @@ def find_matches(pdf_titles, regex_df, contracts_df, rvn_groupings):
 # APP #
 
 # Querybot Modes
-modes = st.radio(
-"Select Mode:",
-('Single Sentence', 'Paragraph', 'Full Contract'))
+# modes = st.radio(
+# "Select Mode:",
+# ('Single Sentence', 'Paragraph', 'Full Contract'))
+modes = option_menu(
+            menu_title=None,  # required
+            options=["Single Sentence", "Paragraph", "Full Contract"],  # required
+            icons=["input-cursor-text", "paragraph", "journal-text"],  # optional
+            menu_icon="cast",  # optional
+            default_index=0,  # optional
+            orientation="horizontal",
+        )
 
 ## SINGLE SENTENCE MODE
 if modes == 'Single Sentence':
@@ -364,7 +280,6 @@ if modes == 'Single Sentence':
         match, match_ID, match_code, num_splits, percent_matches, sentences, matched_sentences = find_rvn(user_input)
         if match_ID:
             rvn_matches = rvn_groups[rvn_groups['Match Code'].str.contains(match_ID)]['RVN']
-            # CSS to inject contained in a string
             hide_table_row_index = """
                         <style>
                         thead tr th:first-child {display:none}
@@ -374,6 +289,20 @@ if modes == 'Single Sentence':
             # Inject CSS with Markdown
             st.markdown(hide_table_row_index, unsafe_allow_html=True)
             st.table(rvn_matches)
+            # # select the columns you want the users to see
+            # gb = GridOptionsBuilder.from_dataframe(rvn_matches[["RVN"]])
+            # # configure selection
+            # gb.configure_selection(selection_mode="single", use_checkbox=True)
+            # gridOptions = gb.build()
+
+            # data = AgGrid(rvn_matches,
+            #             gridOptions=gridOptions,
+            #             enable_enterprise_modules=True,
+            #             allow_unsafe_jscode=True,
+            #             update_mode=GridUpdateMode.SELECTION_CHANGED,
+            #             columns_auto_size_mode=ColumnsAutoSizeMode.FIT_CONTENTS)
+
+            # selected_rows = data["selected_rows"]
         else:
             st.warning('No match. Make sure there are no spelling errors.')
 
