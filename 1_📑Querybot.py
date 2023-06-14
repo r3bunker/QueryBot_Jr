@@ -7,7 +7,6 @@ import pandas as pd
 import pyarrow as pa
 import pyarrow.parquet as pq
 from cryptography.fernet import Fernet
-from st_aggrid import GridOptionsBuilder, AgGrid, GridUpdateMode, ColumnsAutoSizeMode
 from streamlit_option_menu import option_menu
 
 import warnings
